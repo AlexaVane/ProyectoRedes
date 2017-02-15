@@ -1,0 +1,3 @@
+<H2>SISTEMA DE FILTRADO DE CORREO</H2>
+<H3>Acaba de enviar un correo con las siguientes palabras no permitidas:</h3>
+<br/>Gracias por utilizar el SISTEMA DE FILTRADO DE CORREO
