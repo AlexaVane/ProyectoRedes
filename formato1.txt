@@ -1,3 +1,3 @@
-<H2>SISTEMA DE FILTRADO DE CORREO</H2>
-<H3>Acaba de enviar un correo con VIRUS</h3>
-<br/>Gracias por utilizar el SISTEMA DE FILTRADO DE CORREO
+<H2>SISTEMA ANTIVIRUS DE CORREO</H2>
+<H3>Acaba de enviar un correo con virus en los siguientes archivos:</h3>
+<br/>Gracias por utilizar el SISTEMA ANTIVIRUS DE CORREO

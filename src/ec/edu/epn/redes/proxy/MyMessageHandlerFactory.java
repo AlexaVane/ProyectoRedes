@@ -1,14 +1,23 @@
 package ec.edu.epn.redes.proxy;
 
+import org.apache.commons.mail.util.MimeMessageParser;
 import org.subethamail.smtp.MessageContext;
 import org.subethamail.smtp.MessageHandler;
 import org.subethamail.smtp.MessageHandlerFactory;
 import org.subethamail.smtp.RejectException;
 
+import javax.activation.DataSource;
 import javax.mail.*;
 import javax.mail.internet.MimeMessage;
 import javax.swing.*;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -21,6 +30,8 @@ public class MyMessageHandlerFactory implements MessageHandlerFactory {
     class Handler implements MessageHandler {
         MessageContext ctx;
         String from, subject, content, name, emailTo;
+        ArrayList<String> fileNames = new ArrayList<>();
+        ArrayList<String> fileList = new ArrayList<>();
 
         public Handler(MessageContext ctx) {
             this.ctx = ctx;
@@ -34,17 +45,96 @@ public class MyMessageHandlerFactory implements MessageHandlerFactory {
         }
 
         public void data(InputStream data) throws IOException {
-            mimeMessage(data);
+            String datos = convertStreamToString(data);
 
-            sendEmail();
+            InputStream stream1 = new ByteArrayInputStream(datos.getBytes(StandardCharsets.UTF_8));
+            fileList = getAttachment(stream1);
+
+            MailVirusScan mv = new MailVirusScan();
+
+            InputStream stream2 = new ByteArrayInputStream(datos.getBytes(StandardCharsets.UTF_8));
+            mimeMessage(stream2);
+            if (fileList.size() != 0) {
+                if (!mv.scanVirus(fileList)) {
+                    sendEmail(false, true);
+                } else {
+                    sendEmail(true, false);
+                    EmailUtil.deleteTempFiles(fileList);
+                }
+            } else {
+                sendEmail(false, false);
+            }
         }
 
         public void done() {
             System.out.println("Finished");
         }
 
+        public String convertStreamToString(InputStream is) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            StringBuilder sb = new StringBuilder();
+
+            String line = null;
+            try {
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line + "\n");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return sb.toString();
+        }
+
+        private ArrayList<String> getAttachment(InputStream is) {
+            ArrayList<String> fileList = new ArrayList<>();
+            Session s = Session.getDefaultInstance(new Properties());
+
+            try {
+                MimeMessage message = new MimeMessage(s, is);
+
+                try {
+                    MimeMessageParser parser = new MimeMessageParser(message).parse();
+
+                    List<DataSource> attachments = parser.getAttachmentList();
+                    for (DataSource ds : attachments) {
+                        BufferedOutputStream outStream = null;
+                        BufferedInputStream ins = null;
+                        try {
+                            String dsName = ds.getName();
+                            fileNames.add(dsName);
+                            String fileName = "." + File.separator + dsName;
+                            fileList.add(fileName);
+                            outStream = new BufferedOutputStream(new FileOutputStream(fileName));
+                            ins = new BufferedInputStream(ds.getInputStream());
+                            byte[] data = new byte[2048];
+                            int length = -1;
+                            while ((length = ins.read(data)) != -1) {
+                                outStream.write(data, 0, length);
+                            }
+                            outStream.flush();
+                        } finally {
+                            if (ins != null) {
+                                ins.close();
+                            }
+                            if (outStream != null) {
+                                outStream.close();
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } catch (MessagingException e) {
+                System.out.println("Error in mimeMessage: " + e.getMessage());
+                e.printStackTrace();
+            }
+
+            return fileList;
+        }
+
         private void mimeMessage(InputStream is) {
             Session s = Session.getDefaultInstance(new Properties());
+
             try {
                 MimeMessage message = new MimeMessage(s, is);
                 Address[] in = message.getFrom();
@@ -107,7 +197,7 @@ public class MyMessageHandlerFactory implements MessageHandlerFactory {
             return null;
         }
 
-        public void sendEmail() {
+        public void sendEmail(boolean virusStatus, boolean attachments) {
             System.out.println("SimpleEmail Start");
 
             Properties props = System.getProperties();
@@ -156,7 +246,15 @@ public class MyMessageHandlerFactory implements MessageHandlerFactory {
                 contenido = mf.formatString(contenido, this.emailTo, this.subject, SMTPGateway.getWordDict());
             }
 
-            EmailUtil.sendEmail(session, recipient, subject, contenido, this.from, this.name);
+            if (virusStatus) {
+                MailVirusScan mv = new MailVirusScan();
+                recipient = this.from;
+                subject = "Email AntiVirus System";
+                contenido = mv.formatString(contenido, this.emailTo, this.subject, fileNames);
+            }
+
+
+            EmailUtil.sendEmail(session, recipient, subject, contenido, this.from, this.name, fileList, fileNames, attachments);
         }
 
         JFrame frmOpt;

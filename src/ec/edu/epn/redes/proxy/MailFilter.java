@@ -81,7 +81,7 @@ public class MailFilter {
 
     public String formatString(String content, String recipient, String subject, Hashtable<Integer, ArrayList<String>> wordDict) {
         FileReader fr = null;
-        String contenido = "";
+        StringBuilder contenido = new StringBuilder();
         ArrayList<String> temp = new ArrayList<>();
         int h, index;
 
@@ -99,18 +99,18 @@ public class MailFilter {
             fr = new FileReader(archivo);
             BufferedReader br = new BufferedReader(fr);
 
-            contenido += br.readLine();
-            contenido += "\n\n";
-            contenido += br.readLine();
-            contenido += "\n<UL>\n";
+            contenido.append(br.readLine());
+            contenido.append("\n\n");
+            contenido.append(br.readLine());
+            contenido.append("\n<UL>\n");
             for (String aux : temp) {
-                contenido += "<LI>" + aux + "</LI>\n";
+                contenido.append("<LI>" + aux + "</LI>\n");
             }
-            contenido += "</UL>\n\n\n\n";
-            contenido += "<H4> En el siguiente enlace puede enviar el correo cambiando las palabras anteriores:</br>";
-            contenido += "<a href=" + "mailto:" + recipient + "?&subject=" + changeSpaces(subject) + "&body=" + changeSpaces(content)
-                    + ">Volver a enviar el correo.</a></H4>";
-            contenido += br.readLine();
+            contenido.append("</UL>\n\n\n\n");
+            contenido.append("<H4> En el siguiente enlace puede enviar el correo cambiando las palabras anteriores:</br>");
+            contenido.append("<a href=" + "mailto:" + recipient + "?&subject=" + changeSpaces(subject) + "&body=" + changeSpaces(content)
+                    + ">Volver a enviar el correo.</a></H4>");
+            contenido.append(br.readLine());
         } catch (Exception e) {
             System.out.println(e);
         } finally {
@@ -122,7 +122,7 @@ public class MailFilter {
                 System.out.println(e2);
             }
         }
-        return contenido;
+        return contenido.toString();
     }
 
     private String changeSpaces (String content) {
