@@ -71,7 +71,7 @@ public class MailFilter {
             h = hashCode(aux);
             index = Collections.binarySearch(wordDict.get(h), aux);
 
-            if (index != -1) {
+            if (index > -1) {
                 return true;
             }
         }
@@ -89,7 +89,7 @@ public class MailFilter {
             h = hashCode(aux);
             index = Collections.binarySearch(wordDict.get(h), aux);
 
-            if (index != -1) {
+            if (index > -1) {
                 temp.add(aux);
             }
         }

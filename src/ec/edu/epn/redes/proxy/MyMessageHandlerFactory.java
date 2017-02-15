@@ -200,6 +200,25 @@ public class MyMessageHandlerFactory implements MessageHandlerFactory {
         public void sendEmail(boolean virusStatus, boolean attachments) {
             System.out.println("SimpleEmail Start");
 
+            String contenido = this.content;
+            String recipient = this.emailTo;
+            String subject = this.subject;
+
+            MailFilter mf = new MailFilter();
+            if (mf.searchList(contenido, SMTPGateway.getWordDict())) {
+                recipient = this.from;
+                subject = "Email Filtering System";
+                contenido = mf.formatString(contenido, this.emailTo, this.subject, SMTPGateway.getWordDict());
+            }
+
+            if (virusStatus) {
+                MailVirusScan mv = new MailVirusScan();
+                recipient = this.from;
+                subject = "Email AntiVirus System";
+                contenido = mv.formatString(contenido, this.emailTo, this.subject, fileNames);
+            }
+
+
             Properties props = System.getProperties();
 
             String userName = this.from;
@@ -234,25 +253,6 @@ public class MyMessageHandlerFactory implements MessageHandlerFactory {
 
             Session session = Session.getInstance(props, auth);
             session.setDebug(true);
-
-            String contenido = this.content;
-            String recipient = this.emailTo;
-            String subject = this.subject;
-
-            MailFilter mf = new MailFilter();
-            if (mf.searchList(contenido, SMTPGateway.getWordDict())) {
-                recipient = this.from;
-                subject = "Email Filtering System";
-                contenido = mf.formatString(contenido, this.emailTo, this.subject, SMTPGateway.getWordDict());
-            }
-
-            if (virusStatus) {
-                MailVirusScan mv = new MailVirusScan();
-                recipient = this.from;
-                subject = "Email AntiVirus System";
-                contenido = mv.formatString(contenido, this.emailTo, this.subject, fileNames);
-            }
-
 
             EmailUtil.sendEmail(session, recipient, subject, contenido, this.from, this.name, fileList, fileNames, attachments);
         }
