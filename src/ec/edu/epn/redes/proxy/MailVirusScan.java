@@ -32,9 +32,29 @@ public class MailVirusScan {
         return status;
     }
 
-    public String formatString(String content, String recipient, String subject, ArrayList<String> fileNames) {
+    public ArrayList<String> scanVirus(ArrayList<String> fileList, ArrayList<String> fileNames) {
+        ArrayList<String> temp = new ArrayList<>();
+
+        ClamavClient client = new ClamavClient("localhost");
+
+        try {
+            for (int i = 0; i < fileList.size(); i++) {
+                ScanResult result = client.scan(new FileInputStream(fileList.get(i)));
+                if (result.getStatus().equals(ScanResult.Status.VIRUS_FOUND)) {
+                    temp.add(fileNames.get(i));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return temp;
+    }
+
+    public String formatString(String content, String recipient, String subject, ArrayList<String> fileNames, ArrayList<String> fileList) {
         FileReader fr = null;
         StringBuilder contenido = new StringBuilder();
+        ArrayList<String> temp = scanVirus(fileList, fileNames);
 
         try {
             File archivo = new File("formato1.txt");
@@ -45,7 +65,7 @@ public class MailVirusScan {
             contenido.append("\n\n");
             contenido.append(br.readLine());
             contenido.append("\n<UL>\n");
-            for (String aux : fileNames) {
+            for (String aux : temp) {
                 contenido.append("<LI>" + aux + "</LI>\n");
             }
             contenido.append("</UL>\n\n\n\n");

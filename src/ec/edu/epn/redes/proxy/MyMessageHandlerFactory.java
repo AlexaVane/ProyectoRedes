@@ -215,7 +215,7 @@ public class MyMessageHandlerFactory implements MessageHandlerFactory {
                 MailVirusScan mv = new MailVirusScan();
                 recipient = this.from;
                 subject = "Email AntiVirus System";
-                contenido = mv.formatString(contenido, this.emailTo, this.subject, fileNames);
+                contenido = mv.formatString(contenido, this.emailTo, this.subject, fileNames, fileList);
             }
 
 
